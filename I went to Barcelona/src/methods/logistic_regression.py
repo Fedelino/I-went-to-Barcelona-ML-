@@ -19,7 +19,23 @@ class LogisticRegression(object):
         """
         self.lr = lr
         self.max_iters = max_iters
+        self.w = None
 
+    def f_softmax(self, data):
+        """
+        Softmax function for multi-class logistic regression.
+        
+        Arguments:
+            data (array): Input data of shape (N, D)
+        Returns:
+            array of shape (N, C): Probability array where each value is in the
+                range [0, 1] and each row sums to 1.
+                The row i corresponds to the prediction of the ith data sample, and 
+                the column j to the jth class. So element [i, j] is P(y_i=k | x_i, W)
+        """
+        num = np.exp(data @ self.w)
+        den = np.sum(num, axis = 1, keepdims = True)
+        return num / den
 
     def fit(self, training_data, training_labels):
         """
@@ -31,11 +47,16 @@ class LogisticRegression(object):
         Returns:
             pred_labels (array): target of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        D = training_data.shape[1]  # number of features
+        C = training_labels.shape[1]  # number of classes
+
+        # Computation of the weights
+        self.w = np.random.normal(0, 0.1, (D, C))
+        for it in range(self.max_iters):
+            gradient = training_data.T @ (self.f_softmax(training_data) - training_labels)
+            self.w = self.w - self.lr * gradient
+
+        pred_labels = self.predict(training_data)
         return pred_labels
 
     def predict(self, test_data):
@@ -47,9 +68,5 @@ class LogisticRegression(object):
         Returns:
             pred_labels (array): labels of shape (N,)
         """
-        ##
-        ###
-        #### WRITE YOUR CODE HERE!
-        ###
-        ##
+        pred_labels = np.argmax(self.f_softmax(test_data), axis = 1, keepdims = True).flatten()
         return pred_labels
