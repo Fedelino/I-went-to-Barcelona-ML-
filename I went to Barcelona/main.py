@@ -46,27 +46,27 @@ def main(args):
     ## 3. Initialize the method you want to use.
 
    # Use NN (FOR MS2!)
-if args.method == "nn":
-    raise NotImplementedError("This will be useful for MS2.")
+    if args.method == "nn":
+        raise NotImplementedError("This will be useful for MS2.")
 
 # Follow the "DummyClassifier" example for your methods
-if args.method == "dummy_classifier":
-    method_obj = DummyClassifier(arg1=1, arg2=2)
+    if args.method == "dummy_classifier":
+        method_obj = DummyClassifier(arg1=1, arg2=2)
 
-elif args.method == "knn":
-    method_obj = KNN(k=args.K)
+    elif args.method == "knn":
+        method_obj = KNN(k=args.K)
 
-elif args.method == "logistic_regression":
-    xtrain = append_bias_term(xtrain)
-    xtest = append_bias_term(xtest)
-    method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
+    elif args.method == "logistic_regression":
+        xtrain = append_bias_term(xtrain)
+        xtest = append_bias_term(xtest)
+        method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
 
-elif args.method == "kmeans":
+    elif args.method == "kmeans":
     # KMeans n'a pas besoin des labels pour l'entraînement, mais on les donne ici pour connaître le nombre de classes
-    method_obj = KMeans(max_iters=args.max_iters)
+        method_obj = KMeans(max_iters=args.max_iters)
 
-else:
-    raise ValueError(f"Unknown method: {args.method}")
+    else:
+        raise ValueError(f"Unknown method: {args.method}")
 
     ## 4. Train and evaluate the method
     # Fit (:=train) the method on the training data for classification task
@@ -87,56 +87,56 @@ else:
     ### WRITE YOUR CODE HERE if you want to add other outputs, visualization, etc.
 
 
-if __name__ == "__main__":
+    if __name__ == "__main__":
     # Definition of the arguments that can be given through the command line (terminal).
     # If an argument is not given, it will take its default value as defined below.
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--method",
-        default="dummy_classifier",
-        type=str,
-        help="dummy_classifier / knn / logistic_regression / kmeans / nn (MS2)",
-    )
-    parser.add_argument(
-        "--data_path", default="data", type=str, help="path to your dataset"
-    )
-    parser.add_argument(
-        "--data_type", default="features", type=str, help="features/original(MS2)"
-    )
-    parser.add_argument(
-        "--K", type=int, default=1, help="number of neighboring datapoints used for knn"
-    )
-    parser.add_argument(
-        "--lr",
-        type=float,
-        default=1e-5,
-        help="learning rate for methods with learning rate",
-    )
-    parser.add_argument(
-        "--max_iters",
-        type=int,
-        default=100,
-        help="max iters for methods which are iterative",
-    )
-    parser.add_argument(
-        "--test",
-        action="store_true",
-        help="train on whole training data and evaluate on the test data, otherwise use a validation set",
-    )
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--method",
+            default="dummy_classifier",
+            type=str,
+            help="dummy_classifier / knn / logistic_regression / kmeans / nn (MS2)",
+        )
+        parser.add_argument(
+            "--data_path", default="data", type=str, help="path to your dataset"
+        )
+        parser.add_argument(
+             "--data_type", default="features", type=str, help="features/original(MS2)"
+          )
+        parser.add_argument(
+            "--K", type=int, default=1, help="number of neighboring datapoints used for knn"
+        )
+        parser.add_argument(
+            "--lr",
+            type=float,
+            default=1e-5,
+            help="learning rate for methods with learning rate",
+         )
+        parser.add_argument(
+             "--max_iters",
+             type=int,
+             default=100,
+            help="max iters for methods which are iterative",
+        )
+        parser.add_argument(
+            "--test",
+            action="store_true",
+            help="train on whole training data and evaluate on the test data, otherwise use a validation set",
+        )
 
     # Feel free to add more arguments here if you need!
 
     # MS2 arguments
-    parser.add_argument(
-        "--nn_type",
-        default="cnn",
-        help="which network to use, can be 'Transformer' or 'cnn'",
-    )
-    parser.add_argument(
-        "--nn_batch_size", type=int, default=64, help="batch size for NN training"
-    )
+        parser.add_argument(
+            "--nn_type",
+            default="cnn",
+            help="which network to use, can be 'Transformer' or 'cnn'",
+        )
+        parser.add_argument(
+            "--nn_batch_size", type=int, default=64, help="batch size for NN training"
+        )
 
     # "args" will keep in memory the arguments and their values,
     # which can be accessed as "args.data", for example.
-    args = parser.parse_args()
-    main(args)
+        args = parser.parse_args()
+        main(args)
