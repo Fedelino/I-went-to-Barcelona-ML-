@@ -45,16 +45,28 @@ def main(args):
 
     ## 3. Initialize the method you want to use.
 
-    # Use NN (FOR MS2!)
-    if args.method == "nn":
-        raise NotImplementedError("This will be useful for MS2.")
+   # Use NN (FOR MS2!)
+if args.method == "nn":
+    raise NotImplementedError("This will be useful for MS2.")
 
-    # Follow the "DummyClassifier" example for your methods
-    if args.method == "dummy_classifier":
-        method_obj = DummyClassifier(arg1=1, arg2=2)
+# Follow the "DummyClassifier" example for your methods
+if args.method == "dummy_classifier":
+    method_obj = DummyClassifier(arg1=1, arg2=2)
 
-    elif ...:  ### WRITE YOUR CODE HERE
-        pass
+elif args.method == "knn":
+    method_obj = KNN(k=args.K)
+
+elif args.method == "logistic_regression":
+    xtrain = append_bias_term(xtrain)
+    xtest = append_bias_term(xtest)
+    method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
+
+elif args.method == "kmeans":
+    # KMeans n'a pas besoin des labels pour l'entraînement, mais on les donne ici pour connaître le nombre de classes
+    method_obj = KMeans(max_iters=args.max_iters)
+
+else:
+    raise ValueError(f"Unknown method: {args.method}")
 
     ## 4. Train and evaluate the method
     # Fit (:=train) the method on the training data for classification task
