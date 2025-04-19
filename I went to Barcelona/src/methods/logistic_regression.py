@@ -47,14 +47,18 @@ class LogisticRegression(object):
         Returns:
             pred_labels (array): target of shape (N,)
         """
-        D = training_data.shape[1]  # number of features
-        C = training_labels.shape[1]  # number of classes
+        N = training_data.shape[0] 
+        D = training_data.shape[1]  # number of features 
+        C = get_n_classes(training_labels) # number of classes
+
+        # Hot encoding
+        t = label_to_onehot(training_labels, C)
 
         # Computation of the weights
         self.w = np.random.normal(0, 0.1, (D, C))
         for it in range(self.max_iters):
-            gradient = training_data.T @ (self.f_softmax(training_data) - training_labels)
-            self.w = self.w - self.lr * gradient
+            gradient = training_data.T @ (self.f_softmax(training_data) - t)
+            self.w = self.w - (self.lr * gradient)
 
         pred_labels = self.predict(training_data)
         return pred_labels
