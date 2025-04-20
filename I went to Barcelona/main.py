@@ -102,7 +102,8 @@ if __name__ == "__main__":
     parser.add_argument("--nn_type", default="cnn", help="cnn or Transformer for MS2")
     parser.add_argument("--nn_batch_size", type=int, default=64, help="batch size for NN training")
     parser.add_argument("--cv", action="store_true", help="Enable cross-validation for KNN")
-
+    parser.add_argument("--n_clusters", type=int, default=5, help="Number of clusters for kmeans")
+    
     args = parser.parse_args()
     main(args)
 
