@@ -123,3 +123,26 @@ def mse_fn(pred, gt):
     loss = (pred - gt) ** 2
     loss = np.mean(loss)
     return loss
+
+def manual_kfold_split(X, n_splits=5, seed=42):
+    """
+    Split dataset into K train/val folds manually.
+
+    Returns:
+        List of (train_idx, val_idx) pairs.
+    """
+    np.random.seed(seed)
+    indices = np.arange(len(X))
+    np.random.shuffle(indices)
+    fold_sizes = np.full(n_splits, len(X) // n_splits)
+    fold_sizes[:len(X) % n_splits] += 1
+
+    splits = []
+    current = 0
+    for fold_size in fold_sizes:
+        start, stop = current, current + fold_size
+        val_idx = indices[start:stop]
+        train_idx = np.setdiff1d(indices, val_idx)
+        splits.append((train_idx, val_idx))
+        current = stop
+    return splits

@@ -7,11 +7,11 @@ class KMeans(object):
     kNN classifier object.
     """
 
-    def __init__(self, max_iters=500):
-        """
-        Call set_arguments function of this class.
-        """
+    def __init__(self, max_iters=500, n_init=10, criterion="accuracy", n_clusters=None):
         self.max_iters = max_iters
+        self.n_init = n_init
+        self.criterion = criterion
+        self.n_clusters = n_clusters
         self.centroids = None
         self.best_permutation = None
 
@@ -30,14 +30,14 @@ class KMeans(object):
         """
 
         N, D = training_data.shape
-        K = len(np.unique(training_labels))
+        K = self.n_clusters if self.n_clusters is not None else len(np.unique(training_labels))
 
         best_centroids = None
         best_labels = None
         best_score = -1  
+        best_assignments = None
         
-        random_init=10
-        for i in range(random_init):  #initialise more times
+        for i in range(self.n_init):  #initialise more times
             # equivalent to d=np.random.permutation(data)
             # centers=d[:K]
             centroids = training_data[np.random.choice(N, K, replace=False)]
@@ -63,9 +63,18 @@ class KMeans(object):
                     cluster_labels[k] = np.bincount(assigned.astype(int)).argmax()
 
             pred_labels = cluster_labels[assignments]
-
+            
+            if self.criterion == "accuracy":
+                score = np.mean(pred_labels == training_labels)
+            elif self.criterion == "f1":
+                from src.utils import macrof1_fn
+                score = macrof1_fn(pred_labels, training_labels)
+            elif self.criterion == "ssd":
+                score = -np.sum((training_data - centroids[assignments]) ** 2)
+            else:
+                raise ValueError("Invalid scoring: choose from 'accuracy', 'f1', 'ssd'")
+            
             # take the best
-            score = np.mean(pred_labels == training_labels)
             if score > best_score:
                 best_score = score
                 best_centroids = centroids
@@ -75,7 +84,7 @@ class KMeans(object):
         self.centroids = best_centroids
         self.best_permutation = best_labels  # maps cluster index → label
 
-        return pred_labels
+        return self.best_permutation[best_assignments]
 
     def predict(self, test_data):
         """

@@ -2,6 +2,7 @@ import argparse
 import numpy as np
 import os
 
+from src.utils import manual_kfold_split
 from src.data import load_data
 from src.methods.dummy_methods import DummyClassifier
 from src.methods.logistic_regression import LogisticRegression
@@ -11,6 +12,76 @@ from src.utils import normalize_fn, append_bias_term, accuracy_fn, macrof1_fn, m
 
 np.random.seed(100)
 
+"""
+    elif args.method == "kmeans":
+        best_score = -np.inf
+        best_model = None
+        best_k = None
+        k_values = [args.n_clusters] if args.kmeans_k_range is None else list(map(int, args.kmeans_k_range.split(",")))
+
+        if not args.test and args.cv:
+            print("\nRunning cross-validation for KMeans...")
+            folds = manual_kfold_split(xtrain, n_splits=5)
+            for k in k_values:
+                fold_scores = []
+                for train_idx, val_idx in folds:
+                    xtr, xval = xtrain[train_idx], xtrain[val_idx]
+                    ytr, yval = ytrain[train_idx], ytrain[val_idx]
+
+                    model = KMeans(max_iters=args.max_iters, n_init=args.kmeans_n_init,
+                                   criterion=args.kmeans_scoring, n_clusters=k)
+                    model.fit(xtr, ytr)
+                    preds_val = model.predict(xval)
+                    if args.kmeans_scoring == "accuracy":
+                        score = accuracy_fn(preds_val, yval)
+                    elif args.kmeans_scoring == "f1":
+                        score = macrof1_fn(preds_val, yval)
+                    else:
+                        score = -np.sum((xval - model.centroids[model.predict(xval)])**2)
+                    fold_scores.append(score)
+
+                avg_score = np.mean(fold_scores)
+                print(f"K = {k} → CV {args.kmeans_scoring} score = {avg_score:.4f}")
+                if avg_score > best_score:
+                    best_score = avg_score
+                    best_model = model
+                    best_k = k
+
+            print(f"\nBest KMeans K = {best_k} with CV {args.kmeans_scoring} = {best_score:.4f}")
+            method_obj = best_model
+            preds_train = best_model.fit(xtrain, ytrain)
+        else:
+            for k in k_values:
+                print(f"\nTrying KMeans with K = {k}")
+                model = KMeans(
+                    max_iters=args.max_iters,
+                    n_init=args.kmeans_n_init, 
+                    criterion=args.kmeans_scoring,
+                    n_clusters=k
+                )
+                preds_train = model.fit(xtrain, ytrain)
+
+                if args.kmeans_scoring == "accuracy":
+                    score = accuracy_fn(preds_train, ytrain)
+                elif args.kmeans_scoring == "f1":
+                    score = macrof1_fn(preds_train, ytrain)
+                elif args.kmeans_scoring == "ssd":
+                    score = -np.sum((xtrain - model.centroids[model.predict(xtrain)])**2)
+                else:
+                    raise ValueError("Invalid scoring criterion")
+
+                print(f"K = {k} → {args.kmeans_scoring} score = {score:.4f}")
+
+                if score > best_score:
+                    best_score = score
+                    best_model = model
+                    best_k = k
+
+            print(f"\n Best K = {best_k} with {args.kmeans_scoring} = {best_score:.4f}")
+            method_obj = best_model
+            preds_train = best_model.fit(xtrain, ytrain)
+            """
+            
 def main(args):
     # 1. Load data
     if args.data_type == "features":
@@ -34,17 +105,17 @@ def main(args):
 
     elif args.method == "knn":
         if not args.test and args.cv:
-            print("\n🔍 Running cross-validation to find best K for KNN...")
-            from sklearn.model_selection import KFold
+            print("\nRunning manual cross-validation to find best K for KNN...")
 
-            kf = KFold(n_splits=5, shuffle=True, random_state=42)
-            k_range = range(1, 11)
+            k_range = range(1, 50)
             best_k = None
             best_acc = -1
 
+            folds = manual_kfold_split(xtrain, n_splits=5)
+
             for k in k_range:
                 accs = []
-                for train_idx, val_idx in kf.split(xtrain):
+                for train_idx, val_idx in folds:
                     xtr, xval = xtrain[train_idx], xtrain[val_idx]
                     ytr, yval = ytrain[train_idx], ytrain[val_idx]
 
@@ -55,30 +126,70 @@ def main(args):
                     accs.append(acc)
 
                 avg_acc = np.mean(accs)
-                print(f"k = {k}: average val accuracy = {avg_acc:.2f}%")
+                print(f"K = {k}: Avg Val Accuracy = {avg_acc:.2f}%")
 
                 if avg_acc > best_acc:
                     best_acc = avg_acc
                     best_k = k
 
-            print(f"\n✅ Best K = {best_k} with accuracy = {best_acc:.2f}%\n")
+            print(f"\n Best K = {best_k} with Accuracy = {best_acc:.2f}%")
             args.K = best_k
 
         method_obj = KNN(k=args.K)
-
+        preds_train = method_obj.fit(xtrain, ytrain)
+        
     elif args.method == "logistic_regression":
-        xtrain = append_bias_term(xtrain)
-        xtest = append_bias_term(xtest)
-        method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
+        if not args.test and args.cv:
+            print("\nRunning cross-validation for Logistic Regression hyperparameters...")
+            lr_list = [1e-5, 1e-4, 1e-3, 1e-2]
+            iter_list = [100, 200, 300]
+            best_score = -np.inf
+            best_lr = None
+            best_iters = None
+            folds = manual_kfold_split(xtrain, n_splits=5)
 
+            for lr in lr_list:
+                for max_iter in iter_list:
+                    accs = []
+                    for train_idx, val_idx in folds:
+                        xtr, xval = xtrain[train_idx], xtrain[val_idx]
+                        ytr, yval = ytrain[train_idx], ytrain[val_idx]
+
+                        model = LogisticRegression(lr=lr, max_iters=max_iter)
+                        model.fit(xtr, ytr)
+                        preds_val = model.predict(xval)
+                        accs.append(accuracy_fn(preds_val, yval))
+
+                    avg_acc = np.mean(accs)
+                    print(f"lr = {lr}, max_iters = {max_iter} → Avg Val Accuracy = {avg_acc:.4f}")
+                    if avg_acc > best_score:
+                        best_score = avg_acc
+                        best_lr = lr
+                        best_iters = max_iter
+
+            print(f"\nBest Logistic Regression params: lr = {best_lr}, max_iters = {best_iters}, acc = {best_score:.4f}")
+            args.lr = best_lr
+            args.max_iters = best_iters
+
+        method_obj = LogisticRegression(lr=args.lr, max_iters=args.max_iters)
+        preds_train = method_obj.fit(xtrain, ytrain)
+        
     elif args.method == "kmeans":
-        method_obj = KMeans(max_iters=args.max_iters)
+        print("\nRunning KMeans with fixed k = 8 and multiple initializations...")
+        model = KMeans(
+            max_iters=args.max_iters,
+            n_init=args.kmeans_n_init,
+            criterion=args.kmeans_scoring,
+            n_clusters=8
+        )
+        preds_train = model.fit(xtrain, ytrain)
+        method_obj = model
+
 
     else:
         raise ValueError(f"Unknown method: {args.method}")
 
     # 4. Train and evaluate
-    preds_train = method_obj.fit(xtrain, ytrain)
     preds = method_obj.predict(xtest)
 
     acc = accuracy_fn(preds_train, ytrain)
@@ -102,7 +213,12 @@ if __name__ == "__main__":
     parser.add_argument("--nn_type", default="cnn", help="cnn or Transformer for MS2")
     parser.add_argument("--nn_batch_size", type=int, default=64, help="batch size for NN training")
     parser.add_argument("--cv", action="store_true", help="Enable cross-validation for KNN")
-    parser.add_argument("--n_clusters", type=int, default=5, help="Number of clusters for kmeans")
+    parser.add_argument("--n_clusters", type=int, default=None, help="Number of clusters for KMeans (defaults to number of classes)")
+    parser.add_argument("--kmeans_n_init", type=int, default=10, help="Number of random initializations for KMeans")
+    parser.add_argument("--kmeans_scoring", type=str, default="accuracy",
+                        choices=["accuracy", "f1", "ssd"], help="Scoring method for KMeans")
+    parser.add_argument("--kmeans_k_range", type=str, default=None,
+                    help="Comma-separated list of cluster numbers to try, e.g., '3,4,5,6'")
     
     args = parser.parse_args()
     main(args)
